@@ -1,18 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Minesweeper</title>
+  <title>∞ pong</title>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-  <div class="game-container">
-    <h1>Minesweeper</h1>
-    <div class="grid" id="minesweeperGrid"></div>
-    <button id="restartBtn">Restart Game</button>
-  </div>
 
+<body>
+  <div id="pong">
+    <div id="paddle1" class="paddle"></div>
+    <div id="paddle2" class="paddle"></div>
+    <div id="ball"></div>
+    <button id="controls" onclick="toggleControls()">Controls</button>
+    <div id="controlsInfo" class="controls-info">
+      <p>Player 1: W (up), S (down)</p>
+      <p>Player 2: Arrow Up (up), Arrow Down (down)</p>
+    </div>
+    <div id="scoreboard">
+      <span id="score1">0</span> - <span id="score2">0</span>
+    </div>
+    <div id="winnerScreen" class="winner-screen">
+      <h2 id="winnerMessage"></h2>
+      <button id="refreshButton" onclick="refreshGame()">Play Again</button>
+    </div>
+  </div>
   <script src="script.js"></script>
 </body>
+
 </html>
