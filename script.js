@@ -4,6 +4,7 @@ const paddle2 = document.querySelector('#paddle2');
 const ball = document.querySelector('#ball');
 const controlsButton = document.querySelector('#controls');
 const controlsInfo = document.querySelector('#controlsInfo');
+const startGameButton = document.querySelector('#startGame');
 
 let paddle1Y = 240; 
 let paddle2Y = 240; 
@@ -19,15 +20,18 @@ const paddleHeight = 120;
 const paddleWidth = 10;
 const ballSize = 12;
 
-document.addEventListener('keydown', handleKeyDown);
-document.addEventListener('keyup', handleKeyUp);
+let gameRunning = false; // Track if the game is running
 
 let p1MovingUp = false;
 let p1MovingDown = false;
 let p2MovingUp = false;
 let p2MovingDown = false;
 
+document.addEventListener('keydown', handleKeyDown);
+document.addEventListener('keyup', handleKeyUp);
+
 function handleKeyDown(event) {
+    if (!gameRunning) return; // Prevent controls if the game is not running
     if (event.key === 'w' || event.key === 'W') p1MovingUp = true;
     if (event.key === 's' || event.key === 'S') p1MovingDown = true;
 
@@ -91,6 +95,7 @@ function resetBall() {
 }
 
 function gameLoop() {
+    if (!gameRunning) return; // Only run game loop if the game is running
     movePaddles();
     moveBall();
     requestAnimationFrame(gameLoop);
@@ -100,4 +105,11 @@ function toggleControls() {
     controlsInfo.style.display = controlsInfo.style.display === 'none' ? 'block' : 'none';
 }
 
-gameLoop();
+function startGame() {
+    gameRunning = true; // Start the game
+    startGameButton.style.display = 'none'; // Hide the start button
+    gameLoop(); // Start the game loop
+}
+
+gameRunning = false; // Ensure the game does not start immediately
+startGameButton.style.display = 'block'; // Show the start game button
