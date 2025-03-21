@@ -1,146 +1,103 @@
-const gridSize = 10; // 10x10 grid
-const mineCount = 15; // Number of mines
+const canvas = document.querySelector('#pong');
+const paddle1 = document.querySelector('#paddle1');
+const paddle2 = document.querySelector('#paddle2');
+const ball = document.querySelector('#ball');
+const controlsButton = document.querySelector('#controls');
+const controlsInfo = document.querySelector('#controlsInfo');
 
-let grid = [];
-let revealedCells = 0;
-let isGameOver = false;
+let paddle1Y = 240; 
+let paddle2Y = 240; 
+let paddleSpeed = 8.5; // Increased speed by 1.7x
+let ballSpeedX = 4.25; // Increased speed by 1.7x
+let ballSpeedY = 4.25; // Increased speed by 1.7x
+let ballX = 595; 
+let ballY = 290; 
+let ballDirectionX = 1;
+let ballDirectionY = 1;
 
-// Create the game grid
-function createGrid() {
-  grid = [];
-  for (let i = 0; i < gridSize; i++) {
-    const row = [];
-    for (let j = 0; j < gridSize; j++) {
-      row.push({
-        isMine: false,
-        revealed: false,
-        neighboringMines: 0,
-      });
-    }
-    grid.push(row);
-  }
-  
-  // Place mines randomly
-  let minesPlaced = 0;
-  while (minesPlaced < mineCount) {
-    const x = Math.floor(Math.random() * gridSize);
-    const y = Math.floor(Math.random() * gridSize);
-    if (!grid[x][y].isMine) {
-      grid[x][y].isMine = true;
-      minesPlaced++;
-    }
-  }
+const paddleHeight = 120; 
+const paddleWidth = 10;
+const ballSize = 12;
 
-  // Calculate neighboring mines for each cell
-  for (let x = 0; x < gridSize; x++) {
-    for (let y = 0; y < gridSize; y++) {
-      if (grid[x][y].isMine) continue;
-      grid[x][y].neighboringMines = countNeighboringMines(x, y);
-    }
-  }
+document.addEventListener('keydown', handleKeyDown);
+document.addEventListener('keyup', handleKeyUp);
+
+let p1MovingUp = false;
+let p1MovingDown = false;
+let p2MovingUp = false;
+let p2MovingDown = false;
+
+function handleKeyDown(event) {
+    if (event.key === 'w' || event.key === 'W') p1MovingUp = true;
+    if (event.key === 's' || event.key === 'S') p1MovingDown = true;
+
+    if (event.key === 'ArrowUp') p2MovingUp = true;
+    if (event.key === 'ArrowDown') p2MovingDown = true;
 }
 
-// Count neighboring mines for a given cell
-function countNeighboringMines(x, y) {
-  const directions = [
-    [-1, -1], [-1, 0], [-1, 1],
-    [0, -1],           [0, 1],
-    [1, -1], [1, 0], [1, 1],
-  ];
-  let count = 0;
-  directions.forEach(([dx, dy]) => {
-    const nx = x + dx;
-    const ny = y + dy;
-    if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize && grid[nx][ny].isMine) {
-      count++;
+function handleKeyUp(event) {
+    if (event.key === 'w' || event.key === 'W') p1MovingUp = false;
+    if (event.key === 's' || event.key === 'S') p1MovingDown = false;
+    if (event.key === 'ArrowUp') p2MovingUp = false;
+    if (event.key === 'ArrowDown') p2MovingDown = false;
+}
+
+function movePaddles() {
+    if (p1MovingUp && paddle1Y > 0) paddle1Y -= paddleSpeed;
+    if (p1MovingDown && paddle1Y < canvas.clientHeight - paddleHeight) paddle1Y += paddleSpeed;
+
+    if (p2MovingUp && paddle2Y > 0) paddle2Y -= paddleSpeed;
+    if (p2MovingDown && paddle2Y < canvas.clientHeight - paddleHeight) paddle2Y += paddleSpeed;
+
+    paddle1.style.top = `${paddle1Y}px`;
+    paddle2.style.top = `${paddle2Y}px`;
+}
+
+function moveBall() {
+    ballX += ballSpeedX * ballDirectionX;
+    ballY += ballSpeedY * ballDirectionY;
+
+    if (ballY <= 0 || ballY >= canvas.clientHeight - ballSize) {
+        ballDirectionY = -ballDirectionY;
     }
-  });
-  return count;
-}
 
-// Render the grid
-function renderGrid() {
-  const gridContainer = document.getElementById('minesweeperGrid');
-  gridContainer.innerHTML = '';
-  
-  for (let x = 0; x < gridSize; x++) {
-    for (let y = 0; y < gridSize; y++) {
-      const cellElement = document.createElement('div');
-      cellElement.classList.add('cell');
-      
-      if (grid[x][y].revealed) {
-        cellElement.classList.add('revealed');
-        if (grid[x][y].isMine) {
-          cellElement.classList.add('mine');
-        } else if (grid[x][y].neighboringMines > 0) {
-          cellElement.innerText = grid[x][y].neighboringMines;
-        }
-      }
-      
-      cellElement.addEventListener('click', () => handleCellClick(x, y));
-      gridContainer.appendChild(cellElement);
+    if (ballX <= paddleWidth && ballY >= paddle1Y && ballY <= paddle1Y + paddleHeight) {
+        ballDirectionX = 1;
+        const paddleCenter = paddle1Y + paddleHeight / 2;
+        const hitPosition = ballY - paddleCenter;
+        ballDirectionY = hitPosition / (paddleHeight / 2);
     }
-  }
-}
 
-// Handle cell click
-function handleCellClick(x, y) {
-  if (isGameOver || grid[x][y].revealed) return;
-  
-  grid[x][y].revealed = true;
-  revealedCells++;
-
-  if (grid[x][y].isMine) {
-    gameOver(false); // Game over, player clicked a mine
-  } else {
-    if (grid[x][y].neighboringMines === 0) {
-      revealAdjacentCells(x, y);
+    if (ballX >= canvas.clientWidth - paddleWidth - ballSize && ballY >= paddle2Y && ballY <= paddle2Y + paddleHeight) {
+        ballDirectionX = -1;
+        const paddleCenter = paddle2Y + paddleHeight / 2;
+        const hitPosition = ballY - paddleCenter;
+        ballDirectionY = hitPosition / (paddleHeight / 2);
     }
-  }
-  
-  renderGrid();
-  
-  // Check if the player has won
-  if (revealedCells === gridSize * gridSize - mineCount) {
-    gameOver(true); // Player wins
-  }
-}
 
-// Reveal adjacent cells (if they are safe)
-function revealAdjacentCells(x, y) {
-  const directions = [
-    [-1, -1], [-1, 0], [-1, 1],
-    [0, -1],           [0, 1],
-    [1, -1], [1, 0], [1, 1],
-  ];
-
-  directions.forEach(([dx, dy]) => {
-    const nx = x + dx;
-    const ny = y + dy;
-    if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize && !grid[nx][ny].revealed) {
-      grid[nx][ny].revealed = true;
-      revealedCells++;
-      if (grid[nx][ny].neighboringMines === 0) {
-        revealAdjacentCells(nx, ny);
-      }
+    if (ballX <= 0 || ballX >= canvas.clientWidth - ballSize) {
+        resetBall();
     }
-  });
+
+    ball.style.left = `${ballX}px`;
+    ball.style.top = `${ballY}px`;
 }
 
-// End the game (win or lose)
-function gameOver(isWin) {
-  isGameOver = true;
-  alert(isWin ? "You win!" : "Game over! You hit a mine.");
+function resetBall() {
+    ballX = canvas.clientWidth / 2 - ballSize / 2;
+    ballY = canvas.clientHeight / 2 - ballSize / 2;
+    ballDirectionX = ballDirectionX === 1 ? -1 : 1;
+    ballDirectionY = 1;
 }
 
-// Restart the game
-document.getElementById('restartBtn').addEventListener('click', () => {
-  isGameOver = false;
-  revealedCells = 0;
-  createGrid();
-  renderGrid();
-});
+function gameLoop() {
+    movePaddles();
+    moveBall();
+    requestAnimationFrame(gameLoop);
+}
 
-// Initialize the game
-createGrid();
-renderGrid();
+function toggleControls() {
+    controlsInfo.style.display = controlsInfo.style.display === 'none' ? 'block' : 'none';
+}
+
+gameLoop();
